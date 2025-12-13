@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jazz 2-5-1 Practice</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #eee;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #f39c12;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        label {
+            font-weight: bold;
+            color: #f39c12;
+        }
+
+        select {
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            background: #0f3460;
+            color: #eee;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .progression-area {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 50px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .key-info {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+            color: #3498db;
+        }
+
+        .chord-slots {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .chord-slot {
+            width: 200px;
+            height: 130px;
+            border: 3px dashed #555;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            background: rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+            overflow: hidden;
+            padding: 10px;
+        }
+
+        .chord-slot.filled {
+            border: 3px solid #3498db;
+            background: rgba(52, 152, 219, 0.2);
+        }
+
+        .chord-slot.correct {
+            border: 3px solid #2ecc71;
+            background: rgba(46, 204, 113, 0.2);
+            animation: pulse 0.5s;
+        }
+
+        .chord-slot.incorrect {
+            border: 3px solid #f39c12;
+            background: rgba(243, 156, 18, 0.15);
+        }
+
+        .chord-slot.drag-over {
+            background: rgba(243, 156, 18, 0.3);
+            border-color: #f39c12;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .roman-numeral {
+            font-size: 0.8em;
+            color: #f39c12;
+            margin-bottom: 5px;
+        }
+
+        .chord-name {
+            font-size: 1.4em;
+            font-weight: bold;
+            word-break: keep-all;
+            white-space: nowrap;
+            text-align: center;
+            max-width: 100%;
+        }
+
+        .available-chords {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .chord-tile {
+            padding: 15px 25px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 8px;
+            cursor: grab;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .chord-tile:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .chord-tile.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        .chord-tile.greyed {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .chord-tile.selected {
+            background: #c0392b;
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 5px 20px rgba(231, 76, 60, 0.6);
+        }
+
+        .chord-slot.selectable {
+            border-color: #f39c12;
+            background: rgba(243, 156, 18, 0.2);
+            animation: pulse-slow 1.5s infinite;
+        }
+
+        @keyframes pulse-slow {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.02);
+            }
+        }
+
+        .actions {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .hint-btn {
+            background: #9b59b6;
+            color: white;
+        }
+
+        .hint-btn:hover {
+            background: #8e44ad;
+        }
+
+        .hint-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+
+        .next-btn {
+            background: #2ecc71;
+            color: white;
+            display: none;
+        }
+
+        .next-btn:hover {
+            background: #27ae60;
+        }
+
+        .hint-message {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(155, 89, 182, 0.2);
+            border-radius: 8px;
+            color: #9b59b6;
+            display: none;
+        }
+
+        .success-message {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(46, 204, 113, 0.2);
+            border: 2px solid #2ecc71;
+            border-radius: 10px;
+            color: #2ecc71;
+            font-size: 1.3em;
+            font-weight: bold;
+            display: none;
+            animation: pulse 0.5s;
+        }
+
+        .close-hint {
+            margin-left: 10px;
+            cursor: pointer;
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 20px;
+            }
+
+            .controls {
+                padding: 15px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .progression-area {
+                padding: 20px 10px;
+            }
+
+            .chord-slots {
+                gap: 15px;
+            }
+
+            .chord-slot {
+                width: 110px;
+                height: 95px;
+                font-size: 1.2em;
+                padding: 8px;
+            }
+
+            .roman-numeral {
+                font-size: 0.7em;
+            }
+
+            .chord-name {
+                font-size: 1em;
+            }
+
+            .available-chords {
+                gap: 8px;
+                margin-bottom: 20px;
+            }
+
+            .chord-tile {
+                padding: 10px 15px;
+                font-size: 0.95em;
+            }
+
+            .actions {
+                gap: 10px;
+            }
+
+            button {
+                padding: 12px 20px;
+                font-size: 1em;
+            }
+
+            .success-message {
+                font-size: 1.1em;
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .chord-slot {
+                width: 95px;
+                height: 85px;
+                font-size: 1em;
+            }
+
+            .chord-name {
+                font-size: 1em;
+            }
+
+            .chord-tile {
+                padding: 8px 12px;
+                font-size: 0.85em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎹 Jazz 2-5-1 Practice</h1>
+
+        <div class="controls">
+            <div>
+                <label for="mode-select">Practice Mode:</label>
+                <select id="mode-select">
+                    <option value="random">Random Chord Given</option>
+                    <option value="tonic">Always Start With Tonic (I)</option>
+                    <option value="dominant">Always Start With Dominant (V)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="progression-area">
+            <!-- <div class="key-info" id="key-info">Key: C Major</div> -->
+
+            <div class="chord-slots" id="chord-slots">
+                <div class="chord-slot" data-position="ii">
+                    <div class="roman-numeral">ii</div>
+                    <div class="chord-name" id="slot-ii"></div>
+                </div>
+                <div class="chord-slot" data-position="V">
+                    <div class="roman-numeral">V</div>
+                    <div class="chord-name" id="slot-V"></div>
+                </div>
+                <div class="chord-slot" data-position="I">
+                    <div class="roman-numeral">I</div>
+                    <div class="chord-name" id="slot-I"></div>
+                </div>
+            </div>
+
+            <div class="available-chords" id="available-chords"></div>
+
+            <div class="actions">
+                <button class="hint-btn" id="hint-btn">💡 Hint</button>
+                <button class="next-btn" id="next-btn">Next ➜</button>
+            </div>
+
+            <div class="hint-message" id="hint-message">
+                Hint activated! Some wrong options are greyed out.
+                <span class="close-hint" id="close-hint">✕</span>
+            </div>
+
+            <div class="success-message" id="success-message">
+                🎉 Correct! 🎉
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const keys = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+
+        let selectedChordForTouch = null;
+        let isTouchDevice = false;
+
+        const majorProgressions = {
+            'C': { ii: 'Dm7', V: 'G7', I: 'Cmaj7' },
+            'Db': { ii: 'Ebm7', V: 'Ab7', I: 'Dbmaj7' },
+            'D': { ii: 'Em7', V: 'A7', I: 'Dmaj7' },
+            'Eb': { ii: 'Fm7', V: 'Bb7', I: 'Ebmaj7' },
+            'E': { ii: 'F#m7', V: 'B7', I: 'Emaj7' },
+            'F': { ii: 'Gm7', V: 'C7', I: 'Fmaj7' },
+            'F#': { ii: 'G#m7', V: 'C#7', I: 'F#maj7' },
+            'G': { ii: 'Am7', V: 'D7', I: 'Gmaj7' },
+            'Ab': { ii: 'Bbm7', V: 'Eb7', I: 'Abmaj7' },
+            'A': { ii: 'Bm7', V: 'E7', I: 'Amaj7' },
+            'Bb': { ii: 'Cm7', V: 'F7', I: 'Bbmaj7' },
+            'B': { ii: 'C#m7', V: 'F#7', I: 'Bmaj7' }
+        };
+
+        const minorProgressions = {
+            'C': { ii: 'Dm7b5', V: 'G7b13', I: ['Cm(maj7)', 'Cm7'] },
+            'Db': { ii: 'Ebm7b5', V: 'Ab7b13', I: ['Dbm(maj7)', 'Dbm7'] },
+            'D': { ii: 'Em7b5', V: 'A7b13', I: ['Dm(maj7)', 'Dm7'] },
+            'Eb': { ii: 'Fm7b5', V: 'Bb7b13', I: ['Ebm(maj7)', 'Ebm7'] },
+            'E': { ii: 'F#m7b5', V: 'B7b13', I: ['Em(maj7)', 'Em7'] },
+            'F': { ii: 'Gm7b5', V: 'C7b13', I: ['Fm(maj7)', 'Fm7'] },
+            'F#': { ii: 'G#m7b5', V: 'C#7b13', I: ['F#m(maj7)', 'F#m7'] },
+            'G': { ii: 'Am7b5', V: 'D7b13', I: ['Gm(maj7)', 'Gm7'] },
+            'Ab': { ii: 'Bbm7b5', V: 'Eb7b13', I: ['Abm(maj7)', 'Abm7'] },
+            'A': { ii: 'Bm7b5', V: 'E7b13', I: ['Am(maj7)', 'Am7'] },
+            'Bb': { ii: 'Cm7b5', V: 'F7b13', I: ['Bbm(maj7)', 'Bbm7'] },
+            'B': { ii: 'C#m7b5', V: 'F#7b13', I: ['Bm(maj7)', 'Bm7'] }
+        };
+
+        let currentKey, currentMode, currentProgression, filledPosition, correctAnswers;
+        let userAnswers = { ii: null, V: null, I: null };
+        let hintUsed = false;
+
+        function generateNewProgression() {
+            const mode = document.getElementById('mode-select').value;
+            const isMinor = Math.random() < 0.5;
+            const key = keys[Math.floor(Math.random() * keys.length)];
+
+            currentKey = key;
+            currentMode = isMinor ? 'minor' : 'major';
+            currentProgression = isMinor ? minorProgressions[key] : majorProgressions[key];
+            correctAnswers = { ...currentProgression };
+
+            // Handle minor I chord options
+            if (isMinor && Array.isArray(correctAnswers.I)) {
+                correctAnswers.I = correctAnswers.I;
+            }
+
+            // Determine which position is filled
+            if (mode === 'tonic') {
+                filledPosition = 'I';
+            } else if (mode === 'dominant') {
+                filledPosition = 'V';
+            } else {
+                const positions = ['ii', 'V', 'I'];
+                filledPosition = positions[Math.floor(Math.random() * positions.length)];
+            }
+
+            userAnswers = { ii: null, V: null, I: null };
+            hintUsed = false;
+            selectedChordForTouch = null;
+
+            renderProgression();
+        }
+
+        function renderProgression() {
+            // Update key info
+            // document.getElementById('key-info').textContent = 
+            //     `Key: ${currentKey} ${currentMode === 'major' ? 'Major' : 'Minor'}`;
+
+            // Clear slots
+            ['ii', 'V', 'I'].forEach(pos => {
+                const slot = document.getElementById(`slot-${pos}`);
+                const slotDiv = document.querySelector(`[data-position="${pos}"]`);
+                slot.textContent = '';
+                slotDiv.classList.remove('filled', 'correct', 'incorrect');
+
+                if (pos === filledPosition) {
+                    const chord = Array.isArray(correctAnswers[pos]) ?
+                        correctAnswers[pos][0] : correctAnswers[pos];
+                    slot.textContent = chord;
+                    slotDiv.classList.add('filled');
+                    userAnswers[pos] = chord;
+                }
+            });
+
+            // Generate available chords
+            renderAvailableChords();
+
+            // Reset buttons
+            document.getElementById('hint-btn').disabled = false;
+            document.getElementById('next-btn').style.display = 'none';
+            document.getElementById('hint-message').style.display = 'none';
+            document.getElementById('success-message').style.display = 'none';
+            clearSelectableSlots();
+
+            // Make filled slots draggable
+            ['ii', 'V', 'I'].forEach(pos => {
+                makeSlotDraggable(pos);
+            });
+        }
+
+        function renderAvailableChords() {
+            const container = document.getElementById('available-chords');
+            container.innerHTML = '';
+
+            const allChords = new Set();
+
+            // Add correct chords
+            Object.values(currentProgression).forEach(chord => {
+                if (Array.isArray(chord)) {
+                    chord.forEach(c => allChords.add(c));
+                } else {
+                    allChords.add(chord);
+                }
+            });
+
+            // Add some wrong chords from other keys
+            const otherKeys = keys.filter(k => k !== currentKey);
+            for (let i = 0; i < 4; i++) {
+                const randomKey = otherKeys[Math.floor(Math.random() * otherKeys.length)];
+                const prog = currentMode === 'major' ?
+                    majorProgressions[randomKey] : minorProgressions[randomKey];
+
+                Object.values(prog).forEach(chord => {
+                    if (Array.isArray(chord)) {
+                        allChords.add(chord[Math.floor(Math.random() * chord.length)]);
+                    } else {
+                        allChords.add(chord);
+                    }
+                });
+            }
+
+            // Remove already filled chord
+            const filledChord = Array.isArray(correctAnswers[filledPosition]) ?
+                correctAnswers[filledPosition][0] : correctAnswers[filledPosition];
+            allChords.delete(filledChord);
+
+            // Shuffle and create tiles
+            const chordsArray = Array.from(allChords).sort(() => Math.random() - 0.5);
+
+            chordsArray.forEach(chord => {
+                const tile = document.createElement('div');
+                tile.className = 'chord-tile';
+                tile.textContent = chord;
+                tile.draggable = true;
+                tile.dataset.chord = chord;
+
+                tile.addEventListener('dragstart', handleDragStart);
+                tile.addEventListener('dragend', handleDragEnd);
+
+                // Touch support
+                tile.addEventListener('click', handleChordTileClick);
+                tile.addEventListener('touchstart', (e) => {
+                    isTouchDevice = true;
+                    e.preventDefault();
+                    handleChordTileClick(e);
+                });
+
+                container.appendChild(tile);
+            });
+        }
+
+        function handleDragStart(e) {
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', e.target.dataset.chord);
+            e.dataTransfer.setData('source', e.target.dataset.source || 'available');
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function handleChordTileClick(e) {
+            const tile = e.currentTarget;
+            const chord = tile.dataset.chord;
+
+            // If this tile is already selected, deselect it
+            if (selectedChordForTouch === chord) {
+                tile.classList.remove('selected');
+                selectedChordForTouch = null;
+                clearSelectableSlots();
+                return;
+            }
+
+            // Deselect any previously selected tile
+            document.querySelectorAll('.chord-tile.selected').forEach(t => {
+                t.classList.remove('selected');
+            });
+
+            // Select this tile
+            tile.classList.add('selected');
+            selectedChordForTouch = chord;
+
+            // Highlight available slots
+            highlightAvailableSlots();
+        }
+
+        function highlightAvailableSlots() {
+            clearSelectableSlots();
+            document.querySelectorAll('.chord-slot').forEach(slot => {
+                const position = slot.dataset.position;
+                if (position !== filledPosition && !slot.classList.contains('correct')) {
+                    slot.classList.add('selectable');
+                }
+            });
+        }
+
+        function clearSelectableSlots() {
+            document.querySelectorAll('.chord-slot').forEach(slot => {
+                slot.classList.remove('selectable');
+            });
+        }
+
+        // Make filled slots draggable
+        function makeSlotDraggable(position) {
+            const slotDiv = document.querySelector(`[data-position="${position}"]`);
+            const chordNameDiv = document.getElementById(`slot-${position}`);
+
+            if (position !== filledPosition && chordNameDiv.textContent) {
+                slotDiv.draggable = true;
+                slotDiv.style.cursor = 'grab';
+
+                slotDiv.addEventListener('dragstart', (e) => {
+                    const chord = chordNameDiv.textContent;
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', chord);
+                    e.dataTransfer.setData('source', 'slot');
+                    e.dataTransfer.setData('position', position);
+                    slotDiv.style.opacity = '0.5';
+                });
+
+                slotDiv.addEventListener('dragend', (e) => {
+                    slotDiv.style.opacity = '1';
+                });
+
+                // Touch support - long press or double tap to remove
+                let touchTimer;
+                slotDiv.addEventListener('touchstart', (e) => {
+                    if (selectedChordForTouch) return; // Don't interfere with placement
+
+                    touchTimer = setTimeout(() => {
+                        // Long press detected - remove chord
+                        const chord = chordNameDiv.textContent;
+                        if (chord) {
+                            chordNameDiv.textContent = '';
+                            slotDiv.classList.remove('filled', 'correct', 'incorrect');
+                            slotDiv.draggable = false;
+                            slotDiv.style.cursor = 'default';
+                            userAnswers[position] = null;
+                            addChordToAvailable(chord);
+                            checkAnswers();
+                        }
+                    }, 500); // 500ms long press
+                });
+
+                slotDiv.addEventListener('touchend', () => {
+                    clearTimeout(touchTimer);
+                });
+
+                slotDiv.addEventListener('touchmove', () => {
+                    clearTimeout(touchTimer);
+                });
+            } else {
+                slotDiv.draggable = false;
+                slotDiv.style.cursor = 'default';
+            }
+        }
+
+        // Setup drop zones
+        const availableChordsContainer = document.getElementById('available-chords');
+
+        availableChordsContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            availableChordsContainer.style.background = 'rgba(243, 156, 18, 0.1)';
+        });
+
+        availableChordsContainer.addEventListener('dragleave', (e) => {
+            availableChordsContainer.style.background = '';
+        });
+
+        availableChordsContainer.addEventListener('drop', (e) => {
+            e.preventDefault();
+            availableChordsContainer.style.background = '';
+
+            const source = e.dataTransfer.getData('source');
+            if (source === 'slot') {
+                const chord = e.dataTransfer.getData('text/plain');
+                const position = e.dataTransfer.getData('position');
+
+                // Clear the slot
+                const slot = document.querySelector(`[data-position="${position}"]`);
+                const chordNameDiv = document.getElementById(`slot-${position}`);
+                chordNameDiv.textContent = '';
+                slot.classList.remove('filled', 'correct', 'incorrect');
+                slot.draggable = false;
+                slot.style.cursor = 'default';
+                userAnswers[position] = null;
+
+                // Add chord back to available
+                addChordToAvailable(chord);
+
+                checkAnswers();
+            }
+        });
+
+        function addChordToAvailable(chord) {
+            const container = document.getElementById('available-chords');
+            const tile = document.createElement('div');
+            tile.className = 'chord-tile';
+            tile.textContent = chord;
+            tile.draggable = true;
+            tile.dataset.chord = chord;
+
+            tile.addEventListener('dragstart', handleDragStart);
+            tile.addEventListener('dragend', handleDragEnd);
+
+            // Touch support
+            tile.addEventListener('click', handleChordTileClick);
+            tile.addEventListener('touchstart', (e) => {
+                isTouchDevice = true;
+                e.preventDefault();
+                handleChordTileClick(e);
+            });
+
+            container.appendChild(tile);
+        }
+
+        function handleSlotClickOrTouch(e) {
+            if (!selectedChordForTouch) return;
+
+            const slot = e.currentTarget;
+            const position = slot.dataset.position;
+
+            if (position === filledPosition) return;
+            if (slot.classList.contains('correct')) return;
+
+            // If current slot already has a chord, return it to available
+            if (userAnswers[position] && position !== filledPosition) {
+                const existingChord = userAnswers[position];
+                addChordToAvailable(existingChord);
+            }
+
+            userAnswers[position] = selectedChordForTouch;
+            document.getElementById(`slot-${position}`).textContent = selectedChordForTouch;
+            slot.classList.add('filled');
+            slot.classList.remove('correct', 'incorrect', 'selectable');
+
+            // Remove the selected tile from available chords
+            const tile = document.querySelector(`.chord-tile[data-chord="${selectedChordForTouch}"].selected`);
+            if (tile) tile.remove();
+
+            // Clear selection
+            selectedChordForTouch = null;
+            clearSelectableSlots();
+
+            // Make the slot draggable/tappable now that it has a chord
+            makeSlotDraggable(position);
+
+            checkAnswers();
+        }
+
+        document.querySelectorAll('.chord-slot').forEach(slot => {
+            // Touch/click support
+            slot.addEventListener('click', handleSlotClickOrTouch);
+            slot.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                handleSlotClickOrTouch(e);
+            });
+            slot.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                if (!slot.classList.contains('filled')) {
+                    slot.classList.add('drag-over');
+                }
+            });
+
+            slot.addEventListener('dragleave', (e) => {
+                slot.classList.remove('drag-over');
+            });
+
+            slot.addEventListener('drop', (e) => {
+                e.preventDefault();
+                slot.classList.remove('drag-over');
+
+                if (slot.classList.contains('filled') && slot.dataset.position === filledPosition) return;
+
+                const chord = e.dataTransfer.getData('text/plain');
+                const source = e.dataTransfer.getData('source');
+                const sourcePosition = e.dataTransfer.getData('position');
+                const position = slot.dataset.position;
+
+                // If dragging from another slot, clear that slot first
+                if (source === 'slot' && sourcePosition) {
+                    const oldSlot = document.querySelector(`[data-position="${sourcePosition}"]`);
+                    const oldChordNameDiv = document.getElementById(`slot-${sourcePosition}`);
+                    oldChordNameDiv.textContent = '';
+                    oldSlot.classList.remove('filled', 'correct', 'incorrect');
+                    oldSlot.draggable = false;
+                    userAnswers[sourcePosition] = null;
+                }
+
+                // If current slot already has a chord, return it to available
+                if (userAnswers[position] && position !== filledPosition) {
+                    const existingChord = userAnswers[position];
+                    addChordToAvailable(existingChord);
+                }
+
+                userAnswers[position] = chord;
+                document.getElementById(`slot-${position}`).textContent = chord;
+                slot.classList.add('filled');
+                slot.classList.remove('correct');
+
+                // Remove the tile from available chords if it came from there
+                if (source !== 'slot') {
+                    const tile = document.querySelector(`.chord-tile[data-chord="${chord}"]`);
+                    if (tile) tile.remove();
+                }
+
+                // Make the slot draggable now that it has a chord
+                makeSlotDraggable(position);
+
+                checkAnswers();
+            });
+        });
+
+        function checkAnswers() {
+            let allCorrect = true;
+            let allFilled = true;
+
+            ['ii', 'V', 'I'].forEach(pos => {
+                if (pos === filledPosition) return;
+
+                const slot = document.querySelector(`[data-position="${pos}"]`);
+                const userAnswer = userAnswers[pos];
+                const correctAnswer = correctAnswers[pos];
+
+                if (!userAnswer) {
+                    allFilled = false;
+                    allCorrect = false;
+                    return;
+                }
+
+                const isCorrect = Array.isArray(correctAnswer) ?
+                    correctAnswer.includes(userAnswer) : userAnswer === correctAnswer;
+
+                slot.classList.remove('correct', 'incorrect');
+
+                if (isCorrect) {
+                    slot.classList.add('correct');
+                } else {
+                    slot.classList.add('incorrect');
+                    allCorrect = false;
+                }
+            });
+
+            if (allCorrect && allFilled) {
+                document.getElementById('next-btn').style.display = 'inline-block';
+                document.getElementById('success-message').style.display = 'block';
+            } else {
+                document.getElementById('success-message').style.display = 'none';
+            }
+        }
+
+        function showHint() {
+            if (hintUsed) return;
+            hintUsed = true;
+
+            const tiles = document.querySelectorAll('.chord-tile');
+            const correctChords = new Set();
+
+            Object.entries(correctAnswers).forEach(([pos, chord]) => {
+                if (pos === filledPosition) return;
+                if (Array.isArray(chord)) {
+                    chord.forEach(c => correctChords.add(c));
+                } else {
+                    correctChords.add(chord);
+                }
+            });
+
+            tiles.forEach(tile => {
+                if (!correctChords.has(tile.dataset.chord)) {
+                    if (Math.random() < 0.6) { // Grey out 60% of wrong answers
+                        tile.classList.add('greyed');
+                    }
+                }
+            });
+
+            document.getElementById('hint-message').style.display = 'block';
+            document.getElementById('hint-btn').disabled = true;
+        }
+
+        // Event listeners
+        document.getElementById('hint-btn').addEventListener('click', showHint);
+        document.getElementById('next-btn').addEventListener('click', generateNewProgression);
+        document.getElementById('close-hint').addEventListener('click', () => {
+            document.getElementById('hint-message').style.display = 'none';
+        });
+        document.getElementById('mode-select').addEventListener('change', generateNewProgression);
+
+        // Initialize
+        generateNewProgression();
+    </script>
+</body>
+
+</html>
